@@ -28,11 +28,79 @@ class MapViewController: UIViewController {
             mapView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             mapView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
         ])
+
+        self.addZoomControls()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.feedsManager.requestFeeds()
+    }
+}
+
+// MARK: Zoom controls
+extension MapViewController {
+    private func addZoomControls() {
+        let stackView = UIStackView()
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        self.view.addSubview(stackView)
+        stackView.axis = .vertical
+        stackView.isLayoutMarginsRelativeArrangement = true
+        stackView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 6, leading: 6, bottom: 6, trailing: 6)
+        stackView.layer.cornerRadius = 6
+        stackView.clipsToBounds = true
+
+        let blurEffect = UIBlurEffect(style: .extraLight)
+        let blurView = UIVisualEffectView(effect: blurEffect)
+        blurView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.addSubview(blurView)
+
+        let imageConfiguration = UIImage.SymbolConfiguration(textStyle: .subheadline)
+        let zoomInAction = UIAction { (action) in
+            self.zoom(in: true)
+        }
+        let zoomInImage = UIImage(systemName: "plus", withConfiguration: imageConfiguration)
+        let zoomInButton = UIButton(type: .custom, primaryAction: zoomInAction)
+        zoomInButton.setImage(zoomInImage, for: .normal)
+        zoomInButton.accessibilityLabel = NSLocalizedString("Zoom in", comment: "accessibility text for zoom in button")
+        stackView.addArrangedSubview(zoomInButton)
+
+        let zoomOutAction = UIAction { (action) in
+            self.zoom(in: false)
+        }
+        let zoomOutImage = UIImage(systemName: "minus", withConfiguration: imageConfiguration)
+        let zoomOutButton = UIButton(type: .custom, primaryAction: zoomOutAction)
+        zoomOutButton.setImage(zoomOutImage, for: .normal)
+        zoomOutButton.accessibilityLabel = NSLocalizedString("Zoom out", comment: "accessibility text for zoom out button")
+        stackView.addArrangedSubview(zoomOutButton)
+
+        NSLayoutConstraint.activate([
+            stackView.topAnchor.constraint(equalTo: mapView.topAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(equalTo: mapView.trailingAnchor, constant: -16),
+
+            blurView.topAnchor.constraint(equalTo: stackView.topAnchor),
+            blurView.bottomAnchor.constraint(equalTo: stackView.bottomAnchor),
+            blurView.leadingAnchor.constraint(equalTo: stackView.leadingAnchor),
+            blurView.trailingAnchor.constraint(equalTo: stackView.trailingAnchor)
+        ])
+    }
+
+    private func zoom(in isZoomingIn: Bool) {
+        let span = mapView.region.span
+        let multiplier = isZoomingIn ? 0.5 : 2.0
+        let newLatitudeDelta = span.latitudeDelta * multiplier
+        let newLongitudeDelta = span.longitudeDelta * multiplier
+
+        // Make sure the span is valid
+        guard newLongitudeDelta >= -90 && newLongitudeDelta <= 90 &&
+                newLatitudeDelta >= -180 && newLatitudeDelta <= 180 else {
+            return
+        }
+
+        var region = mapView.region
+        region.span = MKCoordinateSpan(latitudeDelta: newLatitudeDelta, longitudeDelta: newLongitudeDelta)
+
+        self.mapView.setRegion(region, animated: true);
     }
 }
 
