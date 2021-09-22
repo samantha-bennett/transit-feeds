@@ -61,9 +61,12 @@ class FeedsManagar {
             if let error = error {
                 os_log(.error, "Failed to get feed due to error: \(error.localizedDescription)")
             }
+
             if let data = data {
-                if let self = self {
-                    self.feeds = TransitFeeds.decodeJSON(data: data)
+                DispatchQueue.main.async {
+                    if let self = self {
+                        self.feeds = TransitFeeds.decodeJSON(data: data)
+                    }
                 }
             }
         }
